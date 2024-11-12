@@ -45,7 +45,7 @@ class Classifier(nn.Module):
         freq_feature = self.freq(tfidf_features)
         pos_feature = self.pos(pos_input)
         # Concat features
-        inputs = torch.cat((seq_feature, freq_feature), dim=1)  # Shape: (batch_size, 128)
+        inputs = torch.cat((seq_feature, freq_feature, pos_feature), dim=1)  # Shape: (batch_size, 128)
         x = inputs
         for l in range(0, self.num_layers - 1):
             lin = getattr(self, "lin" + str(l))
