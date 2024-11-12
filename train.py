@@ -154,7 +154,7 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG, format=FORMAT)
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--conf', type=str, default='./confs/fox_nbc.conf')
+    parser.add_argument('--conf', type=str, default='./confs/binarycls.conf')
     parser.add_argument('--mode', type=str, default='train')
     parser.add_argument('--is_continue', default=False, action="store_true")
     parser.add_argument('--gpu', type=int, default=0)
