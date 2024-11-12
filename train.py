@@ -8,14 +8,26 @@ import torch
 import torch.nn.functional as F
 from tqdm import tqdm
 from pyhocon import ConfigFactory
+
+from dataloader import CLSDataset
 from model.network import Classifier
 from model.frequential import FreqNetwork
 from model.sequential import SeqNetwork
+from model.positional import PosNetwork
+from torch.utils.data import DataLoader
+from torch.utils.data import random_split
+from dataloader import CLSDataset
 
+from transformers import BertTokenizer
 
 class Runner:
     def __init__(self, conf_path, mode='train', case='CASE_NAME', is_continue=False):
-        self.device = torch.device('cpu')
+        if torch.backends.mps.is_available():
+            self.device = torch.device("mps")
+        elif torch.cuda.is_available():
+            self.device = torch.device("cuda")
+        else:
+            self.device = torch.device("cpu")
 
         # Configuration
         self.conf_path = conf_path
@@ -39,25 +51,32 @@ class Runner:
         self.warm_up_end = self.conf.get_float('train.warm_up_end', default=0.0)
         self.anneal_end = self.conf.get_float('train.anneal_end', default=0.0)
 
-        # Weights
-
-
         self.is_continue = is_continue
         self.mode = mode
-        self.model_list = []
-        self.writer = None
 
         # Networks
         params_to_train = []
         self.freq = FreqNetwork(**self.conf['freq']).to(self.device)
         self.seq = SeqNetwork(**self.conf['seq']).to(self.device)
-        self.cls = Classifier(self.freq, self.seq, **self.conf['cls']).to(self.device)
+        self.pos = PosNetwork(**self.conf['pos']).to(self.device)
+        self.cls = Classifier(self.freq, self.seq, self.pos, **self.conf['cls']).to(self.device)
         # params_to_train += list(self.freq.parameters())
         # params_to_train += list(self.seq.parameters())
         params_to_train += list(self.cls.parameters())
 
         self.optimizer = torch.optim.Adam(params_to_train, lr=self.learning_rate)
 
+        # Load Data
+        self.dataset = CLSDataset(**self.conf['dataset'])
+        train_size = int(0.8 * len(self.dataset))
+        val_size = int(0.1 * len(self.dataset))
+        test_size = len(self.dataset) - train_size - val_size
+
+        train_dataset, val_dataset, test_dataset = random_split(self.dataset, [train_size, val_size, test_size])
+        # Create DataLoaders
+        self.train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
+        self.val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False)
+        self.test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
 
         # Load checkpoint
         latest_model_name = None
@@ -73,33 +92,6 @@ class Runner:
         if latest_model_name is not None:
             logging.info('Find checkpoint: {}'.format(latest_model_name))
             self.load_checkpoint(latest_model_name)
-
-        # Backup codes and configs for debug
-        if self.mode[:5] == 'train':
-            self.file_backup()
-
-
-
-    def train(self):
-        self.update_learning_rate()
-        for i in tqdm(range(self.end_iter)):
-            # Loss
-            loss = 0
-
-            self.optimizer.zero_grad()
-            loss.backward()
-            self.optimizer.step()
-
-            self.iter_step += 1
-
-
-
-
-            if self.iter_step % self.save_freq == 0:
-                self.save_checkpoint()
-
-            self.update_learning_rate()
-
 
     def get_cos_anneal_ratio(self):
         if self.anneal_end == 0.0:
@@ -118,13 +110,11 @@ class Runner:
         for g in self.optimizer.param_groups:
             g['lr'] = self.learning_rate * learning_factor
 
-
     def load_checkpoint(self, checkpoint_name):
         checkpoint = torch.load(os.path.join(self.base_exp_dir, 'checkpoints', checkpoint_name),map_location=self.device)
         self.cls.load_state_dict(checkpoint['cls'])
         self.optimizer.load_state_dict(checkpoint['optimizer'])
         self.iter_step = checkpoint['iter_step']
-
         logging.info('End')
 
     def save_checkpoint(self):
@@ -135,12 +125,30 @@ class Runner:
         }
 
         os.makedirs(os.path.join(self.base_exp_dir, 'checkpoints'), exist_ok=True)
-        torch.save(checkpoint,os.path.join(self.base_exp_dir, 'checkpoints', 'ckpt_{:0>6d}.pth'.format(self.iter_step)))
+        torch.save(checkpoint,
+                   os.path.join(self.base_exp_dir, 'checkpoints', 'ckpt_{:0>6d}.pth'.format(self.iter_step)))
 
+    def train(self):
+        self.update_learning_rate()
+        nll_loss = torch.nn.NLLLoss()
+        X_train, y_train = self.train_loader
+        for i in tqdm(range(self.end_iter)):
+            pred = self.cls(X_train)
+            # Loss
+            loss = nll_loss(pred, y_train)
+
+            self.optimizer.zero_grad()
+            loss.backward()
+            self.optimizer.step()
+
+            self.iter_step += 1
+
+            if self.iter_step % self.save_freq == 0:
+                self.save_checkpoint()
+            self.update_learning_rate()
 
 if __name__ == '__main__':
-    os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
-    torch.set_default_tensor_type('torch.cuda.FloatTensor')
+    torch.set_default_tensor_type('torch.FloatTensor')
 
     FORMAT = "[%(filename)s:%(lineno)s - %(funcName)20s() ] %(message)s"
     logging.basicConfig(level=logging.DEBUG, format=FORMAT)

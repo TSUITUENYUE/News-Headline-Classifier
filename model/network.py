@@ -8,6 +8,7 @@ class Classifier(nn.Module):
     def __init__(self,
                  freq_network,
                  seq_network,
+                 pos_network,
                  combined_input,
                  combined_dim,
                  num_classes,
@@ -22,6 +23,9 @@ class Classifier(nn.Module):
         self.freq = freq_network
         # Sequential Network
         self.seq = seq_network
+        # Positional Network
+        self.pos = pos_network
+
         # Combined classification layers
         dims = [combined_input] + [combined_dim for _ in range(n_layers)] + [num_classes]
         for l in range(0, self.num_layers - 1):
@@ -35,10 +39,11 @@ class Classifier(nn.Module):
             setattr(self, "lin" + str(l), lin)
         self.activation = nn.ReLU
 
-    def forward(self, input_ids, attention_mask, tfidf_features):
+    def forward(self, seq_input, tfidf_features, pos_input):
 
-        seq_feature = self.seq(input_ids, attention_mask)
+        seq_feature = self.seq(seq_input[0],seq_input[1])
         freq_feature = self.freq(tfidf_features)
+        pos_feature = self.pos(pos_input)
         # Concat features
         inputs = torch.cat((seq_feature, freq_feature), dim=1)  # Shape: (batch_size, 128)
         x = inputs

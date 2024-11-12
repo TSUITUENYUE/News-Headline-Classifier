@@ -8,6 +8,7 @@ class SeqNetwork(nn.Module):
                  input_dim,
                  output_dim,
                  hidden_dim,
+                 lstm_in,
                  n_layers,
                  skip_in=(4,),
                  weight_norm=True,
@@ -25,7 +26,7 @@ class SeqNetwork(nn.Module):
                 param.requires_grad = False
 
         # Sequential model for BERT embeddings
-        self.lstm = nn.LSTM(input_size=input_dim, hidden_size=hidden_dim, batch_first=True)
+        self.lstm = nn.LSTM(input_size=lstm_in, hidden_size=input_dim, batch_first=True)
         dims = [input_dim] + [hidden_dim for _ in range(n_layers)] + [output_dim]
         for l in range(0, self.num_layers - 1):
             if l + 1 in self.skip_in:
