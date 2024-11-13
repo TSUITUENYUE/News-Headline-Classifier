@@ -135,8 +135,8 @@ class Runner:
         criterion = torch.nn.BCEWithLogitsLoss()
 
 
-        for i in tqdm(range(self.end_iter)):
-            for X_train, y_train in self.train_loader:
+        for epoch in range(self.end_iter):
+            for X_train, y_train in tqdm(self.train_loader, desc=f"Epoch {epoch+1}/{self.end_iter}", leave=False):
                 freq_input, seq_input, pos_input = X_train
                 y_train = y_train[:,None].to(self.device)
                 pred = self.cls(freq_input.to(self.device),seq_input.to(self.device),pos_input.to(self.device))
