@@ -133,13 +133,14 @@ class Runner:
     def train(self):
         self.update_learning_rate()
         criterion = torch.nn.BCEWithLogitsLoss()
-
+        loss = None
 
         for epoch in range(self.end_iter):
             for X_train, y_train in tqdm(self.train_loader, desc=f"Epoch {epoch+1}/{self.end_iter}", leave=False):
                 freq_input, seq_input, pos_input = X_train
                 y_train = y_train[:,None].to(self.device)
                 pred = self.cls(freq_input.to(self.device),seq_input.to(self.device),pos_input.to(self.device))
+                # pred = self.cls(freq_input.to(self.device), seq_input.to(self.device))
                 # Loss
                 loss = criterion(pred, y_train)
 
@@ -148,7 +149,7 @@ class Runner:
                 self.optimizer.step()
 
             self.iter_step += 1
-
+            print("loss=", loss.detach().cpu().numpy())
             if self.iter_step % self.save_freq == 0:
                 self.save_checkpoint()
             self.update_learning_rate()
