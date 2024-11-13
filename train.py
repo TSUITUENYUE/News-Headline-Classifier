@@ -134,7 +134,8 @@ class Runner:
         self.update_learning_rate()
         criterion = torch.nn.BCEWithLogitsLoss()
         loss = None
-
+        correct = 0
+        total = 0
         for epoch in range(self.end_iter):
             for X_train, y_train in tqdm(self.train_loader, desc=f"Epoch {epoch+1}/{self.end_iter}", leave=False):
                 freq_input, seq_input, pos_input = X_train
@@ -147,9 +148,11 @@ class Runner:
                 self.optimizer.zero_grad()
                 loss.backward()
                 self.optimizer.step()
-
+                total += y_train.size(0)
+                correct += ((torch.sigmoid(pred) > 0.5).float() == y_train).sum().item()
             self.iter_step += 1
-            print("loss =", loss.detach().cpu().numpy())
+            print("Train Loss:", loss.detach().cpu().numpy())
+            print("Train Accuracy:", correct / total)
             if self.iter_step % self.save_freq == 0:
                 self.save_checkpoint()
             self.update_learning_rate()
