@@ -46,6 +46,7 @@ class Runner:
         # Training parameters
         self.end_iter = self.conf.get_int('train.end_iter')
         self.save_freq = self.conf.get_int('train.save_freq')
+        self.val_freq = self.conf.get_int('train.val_freq')
         self.batch_size = self.conf.get_int('train.batch_size')
         self.learning_rate = self.conf.get_float('train.learning_rate')
         self.learning_rate_alpha = self.conf.get_float('train.learning_rate_alpha')
@@ -152,8 +153,11 @@ class Runner:
             self.iter_step += 1
             print("Train Loss:", loss.detach().cpu().numpy())
             print("Train Accuracy:", correct / total)
+
             if self.iter_step % self.save_freq == 0:
                 self.save_checkpoint()
+            if self.iter_step % self.val_freq ==0:
+                self.val()
             self.update_learning_rate()
 
     def val(self):
