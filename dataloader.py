@@ -38,7 +38,7 @@ class CLSDataset(Dataset):
             freq_input = self.tfidf_vectorizer.transform([headline]).toarray()[0] #dim: 8621
             seq_input = self.seqtokenizer(headline, padding='max_length', truncation=True, return_tensors='pt') #dim: 512
             seq_input = torch.vstack((seq_input['input_ids'], seq_input['attention_mask']))
-            pos_input = positional_encoding(64, 256)
+            pos_input = positional_encoding(128, 512)
         else:
             freq_input = headline
             seq_input = headline

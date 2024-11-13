@@ -70,8 +70,8 @@ class Runner:
 
         # Load Data
         self.dataset = CLSDataset(**self.conf['dataset'])
-        train_size = int(0.6 * len(self.dataset))
-        val_size = int(0.2 * len(self.dataset))
+        train_size = int(0.8 * len(self.dataset))
+        val_size = int(0.1 * len(self.dataset))
         test_size = len(self.dataset) - train_size - val_size
 
         train_dataset, val_dataset, test_dataset = random_split(self.dataset, [train_size, val_size, test_size])
@@ -149,7 +149,7 @@ class Runner:
                 self.optimizer.step()
 
             self.iter_step += 1
-            print("loss=", loss.detach().cpu().numpy())
+            print("loss =", loss.detach().cpu().numpy())
             if self.iter_step % self.save_freq == 0:
                 self.save_checkpoint()
             self.update_learning_rate()
