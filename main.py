@@ -19,7 +19,6 @@ from torch.utils.data import DataLoader
 from torch.utils.data import random_split
 from dataloader import CLSDataset
 
-from transformers import BertTokenizer
 
 torch.set_default_dtype(torch.float32)
 class Runner:
