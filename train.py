@@ -154,6 +154,44 @@ class Runner:
                 self.save_checkpoint()
             self.update_learning_rate()
 
+    def val(self):
+        self.cls.eval()
+        criterion = torch.nn.BCEWithLogitsLoss()
+        val_loss = 0
+        correct = 0
+        total = 0
+        with torch.no_grad():
+            for X_val, y_val in tqdm(self.val_loader, desc="Validation", leave=False):
+                freq_input, seq_input, pos_input = X_val
+                y_val = y_val[:,None].to(self.device)
+                pred = self.cls(freq_input.to(self.device), seq_input.to(self.device), pos_input.to(self.device))
+                # pred = self.cls(freq_input.to(self.device), seq_input.to(self.device))
+                loss = criterion(pred, y_val)
+                val_loss += loss.item()
+                total += y_val.size(0)
+                correct += ((torch.sigmoid(pred) > 0.5).float() == y_val).sum().item()
+        print("Validation Loss: ", val_loss / total)
+        print("Validation Accuracy: ", correct / total)
+
+    def test(self):
+        self.cls.eval()
+        criterion = torch.nn.BCEWithLogitsLoss()
+        test_loss = 0
+        correct = 0
+        total = 0
+        with torch.no_grad():
+            for X_test, y_test in tqdm(self.test_loader, desc="Testing", leave=False):
+                freq_input, seq_input, pos_input = X_test
+                y_test = y_test[:,None].to(self.device)
+                pred = self.cls(freq_input.to(self.device), seq_input.to(self.device), pos_input.to(self.device))
+                # pred = self.cls(freq_input.to(self.device), seq_input.to(self.device))
+                loss = criterion(pred, y_test)
+                test_loss += loss.item()
+                total += y_test.size(0)
+                correct += ((torch.sigmoid(pred) > 0.5).float() == y_test).sum().item()
+        print("Test Loss: ", test_loss / total)
+        print("Test Accuracy: ", correct / total)
+
 if __name__ == '__main__':
 
     #FORMAT = "[%(filename)s:%(lineno)s - %(funcName)20s() ] %(message)s"
@@ -171,3 +209,7 @@ if __name__ == '__main__':
 
     if args.mode == 'train':
         runner.train()
+    elif args.mode == 'val':
+        runner.val()
+    elif args.mode == 'test':
+        runner.test()
