@@ -20,6 +20,7 @@ from dataloader import CLSDataset
 
 from transformers import BertTokenizer
 
+torch.set_default_dtype(torch.float32)
 class Runner:
     def __init__(self, conf_path, mode='train', case='CASE_NAME', is_continue=False):
         if torch.backends.mps.is_available():
@@ -56,10 +57,10 @@ class Runner:
 
         # Networks
         params_to_train = []
-        self.freq = FreqNetwork(**self.conf['freq']).to(self.device)
-        self.seq = SeqNetwork(**self.conf['seq']).to(self.device)
-        self.pos = PosNetwork(**self.conf['pos']).to(self.device)
-        self.cls = Classifier(self.freq, self.seq, self.pos, **self.conf['cls']).to(self.device)
+        self.freq = FreqNetwork(**self.conf['model']['freq']).to(self.device)
+        self.seq = SeqNetwork(**self.conf['model']['seq']).to(self.device)
+        self.pos = PosNetwork(**self.conf['model']['pos']).to(self.device)
+        self.cls = Classifier(self.freq, self.seq, self.pos, **self.conf['model']['cls']).to(self.device)
         # params_to_train += list(self.freq.parameters())
         # params_to_train += list(self.seq.parameters())
         params_to_train += list(self.cls.parameters())
@@ -131,15 +132,19 @@ class Runner:
     def train(self):
         self.update_learning_rate()
         nll_loss = torch.nn.NLLLoss()
-        X_train, y_train = self.train_loader
-        for i in tqdm(range(self.end_iter)):
-            pred = self.cls(X_train)
-            # Loss
-            loss = nll_loss(pred, y_train)
 
-            self.optimizer.zero_grad()
-            loss.backward()
-            self.optimizer.step()
+
+        for i in tqdm(range(self.end_iter)):
+            for X_train, y_train in self.train_loader:
+                freq_input, seq_input, pos_input = X_train
+                y_train = y_train.to(self.device)
+                pred = self.cls(freq_input.to(self.device),seq_input.to(self.device),pos_input.to(self.device))
+                # Loss
+                loss = nll_loss(pred, y_train)
+
+                self.optimizer.zero_grad()
+                loss.backward()
+                self.optimizer.step()
 
             self.iter_step += 1
 
@@ -148,7 +153,6 @@ class Runner:
             self.update_learning_rate()
 
 if __name__ == '__main__':
-    torch.set_default_tensor_type('torch.FloatTensor')
 
     FORMAT = "[%(filename)s:%(lineno)s - %(funcName)20s() ] %(message)s"
     logging.basicConfig(level=logging.DEBUG, format=FORMAT)
@@ -157,12 +161,9 @@ if __name__ == '__main__':
     parser.add_argument('--conf', type=str, default='./confs/binarycls.conf')
     parser.add_argument('--mode', type=str, default='train')
     parser.add_argument('--is_continue', default=False, action="store_true")
-    parser.add_argument('--gpu', type=int, default=0)
-    parser.add_argument('--case', type=str, default='')
+    parser.add_argument('--case', type=str, default='fox_nbc')
 
     args = parser.parse_args()
-
-    torch.cuda.set_device(args.gpu)
     runner = Runner(args.conf, args.mode, args.case, args.is_continue)
 
     if args.mode == 'train':

@@ -39,11 +39,15 @@ class Classifier(nn.Module):
             setattr(self, "lin" + str(l), lin)
         self.activation = nn.ReLU
 
-    def forward(self, seq_input, tfidf_features, pos_input):
+    def forward(self, tfidf_features, seq_input, pos_input):
 
         seq_feature = self.seq(seq_input[0],seq_input[1])
         freq_feature = self.freq(tfidf_features)
         pos_feature = self.pos(pos_input)
+
+        print(seq_feature.shape,
+              freq_feature.shape,
+        pos_feature.shape)
         # Concat features
         inputs = torch.cat((seq_feature, freq_feature, pos_feature), dim=1)  # Shape: (batch_size, 128)
         x = inputs
@@ -55,7 +59,7 @@ class Classifier(nn.Module):
             x = lin(x)
 
             if l < self.num_layers - 2:
-                x = self.activation(x)
+                x = self.activation()(x)
 
         # Output layer
         prob = F.sigmoid(x)

@@ -2,14 +2,7 @@ import torch
 import torch.nn as nn
 import numpy as np
 
-def positional_encoding(seq_len, d_model):
-    pos_enc = np.zeros((seq_len, d_model))
-    for pos in range(seq_len):
-        for i in range(0, d_model, 2):
-            pos_enc[pos, i] = np.sin(pos / (10000 ** ((2 * i) / d_model)))
-            if i + 1 < d_model:
-                pos_enc[pos, i + 1] = np.cos(pos / (10000 ** ((2 * (i + 1)) / d_model)))
-    return torch.tensor(pos_enc, dtype=torch.float)
+
 
 class SIREN(nn.Module):
     def __init__(self, in_features, out_features, bias=True, is_first=False, omega_0=30):
@@ -50,7 +43,6 @@ class PosNetwork(nn.Module):
                 self.siren_layers.append(SIREN(dims[l], dims[l + 1]))
 
     def forward(self, inputs):
-        inputs = positional_encoding(inputs.size(1), inputs.size(2)).to(inputs.device)
         x = inputs
         for l in range(0, self.num_layers - 1):
             siren_layer = self.siren_layers[l]

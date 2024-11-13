@@ -57,6 +57,6 @@ class SeqNetwork(nn.Module):
             x = lin(x)
 
             if l < self.num_layers - 2:
-                x = self.activation(x)
+                x = self.activation()(x)
         bert_feature = x # Shape: (batch_size, feature_size)
         return bert_feature

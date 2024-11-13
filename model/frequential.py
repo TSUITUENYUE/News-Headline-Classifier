@@ -36,7 +36,7 @@ class FreqNetwork(nn.Module):
             x = lin(x)
 
             if l < self.num_layers - 2:
-                x = self.activation(x)
+                x = self.activation()(x)
 
 
         return x
