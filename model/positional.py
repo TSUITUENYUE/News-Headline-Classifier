@@ -36,7 +36,7 @@ class PosNetwork(nn.Module):
         self.num_layers = n_layers
         self.skip_in = skip_in
         self.siren_layers = nn.ModuleList()
-        for l in range(0, self.num_layers - 1):
+        for l in range(0, self.num_layers + 1):
             if l == 0:
                 self.siren_layers.append(SIREN(dims[l], dims[l + 1], is_first=True))
             else:
@@ -44,9 +44,11 @@ class PosNetwork(nn.Module):
 
     def forward(self, inputs):
         x = inputs
-        for l in range(0, self.num_layers - 1):
+        for l in range(0, self.num_layers + 1):
             siren_layer = self.siren_layers[l]
             x = siren_layer(x)
             if l in self.skip_in:
                 x = torch.cat([x, inputs], 1) / np.sqrt(2)
+
+        x = x.mean(dim=1)  # Pooling to match Shape: (32, 128)
         return x

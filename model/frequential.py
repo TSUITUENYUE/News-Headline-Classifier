@@ -14,7 +14,7 @@ class FreqNetwork(nn.Module):
         dims = [tfidf_input_dim] + [tfidf_hidden_dim for _ in range(n_layers)] + [tfidf_output_dim]
         self.num_layers = n_layers
         self.skip_in = skip_in
-        for l in range(0, self.num_layers - 1):
+        for l in range(0, self.num_layers+1):
             if l + 1 in self.skip_in:
                 out_dim = dims[l + 1] - dims[0]
             else:
@@ -27,7 +27,7 @@ class FreqNetwork(nn.Module):
 
     def forward(self, inputs):
         x = inputs
-        for l in range(0, self.num_layers - 1):
+        for l in range(0, self.num_layers+1):
             lin = getattr(self, "lin" + str(l))
 
             if l in self.skip_in:
@@ -35,7 +35,7 @@ class FreqNetwork(nn.Module):
 
             x = lin(x)
 
-            if l < self.num_layers - 2:
+            if l < self.num_layers:
                 x = self.activation()(x)
 
 

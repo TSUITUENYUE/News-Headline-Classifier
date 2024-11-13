@@ -7,3 +7,7 @@
 
 ## Run the code: 
 ```python train.py --mode train --conf ./confs/binarycls.conf --case <case_name> ```
+
+or simply:
+
+```python train.py```

@@ -3,6 +3,7 @@ import time
 import logging
 import argparse
 import numpy as np
+import warnings
 
 import torch
 import torch.nn.functional as F
@@ -57,10 +58,10 @@ class Runner:
 
         # Networks
         params_to_train = []
-        self.freq = FreqNetwork(**self.conf['model']['freq']).to(self.device)
-        self.seq = SeqNetwork(**self.conf['model']['seq']).to(self.device)
-        self.pos = PosNetwork(**self.conf['model']['pos']).to(self.device)
-        self.cls = Classifier(self.freq, self.seq, self.pos, **self.conf['model']['cls']).to(self.device)
+        self.freq = FreqNetwork(**self.conf['model.freq']).to(self.device)
+        self.seq = SeqNetwork(**self.conf['model.seq']).to(self.device)
+        self.pos = PosNetwork(**self.conf['model.pos']).to(self.device)
+        self.cls = Classifier(self.freq, self.seq, self.pos, **self.conf['model.cls']).to(self.device)
         # params_to_train += list(self.freq.parameters())
         # params_to_train += list(self.seq.parameters())
         params_to_train += list(self.cls.parameters())
@@ -75,9 +76,9 @@ class Runner:
 
         train_dataset, val_dataset, test_dataset = random_split(self.dataset, [train_size, val_size, test_size])
         # Create DataLoaders
-        self.train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
-        self.val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False)
-        self.test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
+        self.train_loader = DataLoader(train_dataset, batch_size=self.batch_size, shuffle=True)
+        self.val_loader = DataLoader(val_dataset, batch_size=self.batch_size, shuffle=False)
+        self.test_loader = DataLoader(test_dataset, batch_size=self.batch_size, shuffle=False)
 
         # Load checkpoint
         latest_model_name = None
@@ -131,16 +132,16 @@ class Runner:
 
     def train(self):
         self.update_learning_rate()
-        nll_loss = torch.nn.NLLLoss()
+        criterion = torch.nn.BCEWithLogitsLoss()
 
 
         for i in tqdm(range(self.end_iter)):
             for X_train, y_train in self.train_loader:
                 freq_input, seq_input, pos_input = X_train
-                y_train = y_train.to(self.device)
+                y_train = y_train[:,None].to(self.device)
                 pred = self.cls(freq_input.to(self.device),seq_input.to(self.device),pos_input.to(self.device))
                 # Loss
-                loss = nll_loss(pred, y_train)
+                loss = criterion(pred, y_train)
 
                 self.optimizer.zero_grad()
                 loss.backward()
@@ -154,8 +155,9 @@ class Runner:
 
 if __name__ == '__main__':
 
-    FORMAT = "[%(filename)s:%(lineno)s - %(funcName)20s() ] %(message)s"
-    logging.basicConfig(level=logging.DEBUG, format=FORMAT)
+    #FORMAT = "[%(filename)s:%(lineno)s - %(funcName)20s() ] %(message)s"
+    #logging.basicConfig(level=logging.DEBUG, format=FORMAT)
+    warnings.filterwarnings("ignore")
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--conf', type=str, default='./confs/binarycls.conf')

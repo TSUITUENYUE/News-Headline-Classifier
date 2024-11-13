@@ -28,7 +28,7 @@ class SeqNetwork(nn.Module):
         # Sequential model for BERT embeddings
         self.lstm = nn.LSTM(input_size=lstm_in, hidden_size=input_dim, batch_first=True)
         dims = [input_dim] + [hidden_dim for _ in range(n_layers)] + [output_dim]
-        for l in range(0, self.num_layers - 1):
+        for l in range(0, self.num_layers + 1):
             if l + 1 in self.skip_in:
                 out_dim = dims[l + 1] - dims[0]
             else:
@@ -48,7 +48,7 @@ class SeqNetwork(nn.Module):
         lstm_out, (h_n, c_n) = self.lstm(bert_sequence_output)
         inputs = h_n[-1]  # Use the last hidden state
         x = inputs
-        for l in range(0, self.num_layers - 1):
+        for l in range(0, self.num_layers + 1):
             lin = getattr(self, "lin" + str(l))
 
             if l in self.skip_in:
@@ -56,7 +56,7 @@ class SeqNetwork(nn.Module):
 
             x = lin(x)
 
-            if l < self.num_layers - 2:
+            if l < self.num_layers:
                 x = self.activation()(x)
         bert_feature = x # Shape: (batch_size, feature_size)
         return bert_feature
