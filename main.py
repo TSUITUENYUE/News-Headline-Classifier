@@ -67,6 +67,7 @@ class Runner:
         params_to_train += list(self.cls.parameters())
 
         self.optimizer = torch.optim.Adam(params_to_train, lr=self.learning_rate)
+        self.criterion = torch.nn.BCEWithLogitsLoss()
 
         # Load Data
         self.dataset = CLSDataset(**self.conf['dataset'])
@@ -132,7 +133,6 @@ class Runner:
 
     def train(self):
         self.update_learning_rate()
-        criterion = torch.nn.BCEWithLogitsLoss()
         loss = None
         correct = 0
         total = 0
@@ -143,7 +143,7 @@ class Runner:
                 pred = self.cls(freq_input.to(self.device),seq_input.to(self.device),pos_input.to(self.device))
                 # pred = self.cls(freq_input.to(self.device), seq_input.to(self.device))
                 # Loss
-                loss = criterion(pred, y_train)
+                loss = self.criterion(pred, y_train)
 
                 self.optimizer.zero_grad()
                 loss.backward()
@@ -162,7 +162,6 @@ class Runner:
 
     def val(self):
         self.cls.eval()
-        criterion = torch.nn.BCEWithLogitsLoss()
         val_loss = 0
         correct = 0
         total = 0
@@ -172,7 +171,7 @@ class Runner:
                 y_val = y_val[:,None].to(self.device)
                 pred = self.cls(freq_input.to(self.device), seq_input.to(self.device), pos_input.to(self.device))
                 # pred = self.cls(freq_input.to(self.device), seq_input.to(self.device))
-                loss = criterion(pred, y_val)
+                loss = self.criterion(pred, y_val)
                 val_loss += loss.item()
                 total += y_val.size(0)
                 correct += ((torch.sigmoid(pred) > 0.5).float() == y_val).sum().item()
@@ -181,7 +180,6 @@ class Runner:
 
     def test(self):
         self.cls.eval()
-        criterion = torch.nn.BCEWithLogitsLoss()
         test_loss = 0
         correct = 0
         total = 0
@@ -191,7 +189,7 @@ class Runner:
                 y_test = y_test[:,None].to(self.device)
                 pred = self.cls(freq_input.to(self.device), seq_input.to(self.device), pos_input.to(self.device))
                 # pred = self.cls(freq_input.to(self.device), seq_input.to(self.device))
-                loss = criterion(pred, y_test)
+                loss = self.criterion(pred, y_test)
                 test_loss += loss.item()
                 total += y_test.size(0)
                 correct += ((torch.sigmoid(pred) > 0.5).float() == y_test).sum().item()
