@@ -151,7 +151,7 @@ class Runner:
                 total += y_train.size(0)
                 correct += ((torch.sigmoid(pred) > 0.5).float() == y_train).sum().item()
             self.iter_step += 1
-            print("Train Loss:", loss.detach().cpu().numpy())
+            print("Train Loss:", loss.item())
             print("Train Accuracy:", correct / total)
 
             if self.iter_step % self.save_freq == 0:
@@ -206,7 +206,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--conf', type=str, default='./confs/binarycls.conf')
-    parser.add_argument('--mode', type=str, default='train')
+    parser.add_argument('--mode', type=str, default='test')
     parser.add_argument('--is_continue', default=False, action="store_true")
     parser.add_argument('--case', type=str, default='fox_nbc')
 
