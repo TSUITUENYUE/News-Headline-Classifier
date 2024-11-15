@@ -20,7 +20,6 @@ from torch.utils.data import random_split
 from dataloader import CLSDataset
 
 
-torch.set_default_dtype(torch.float32)
 class Runner:
     def __init__(self, conf_path, mode='train', case='CASE_NAME', is_continue=False):
         if torch.backends.mps.is_available():
@@ -205,7 +204,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--conf', type=str, default='./confs/binarycls.conf')
     parser.add_argument('--mode', type=str, default='test')
-    parser.add_argument('--is_continue', default=False, action="store_true")
+    parser.add_argument('--is_continue', default=True, action="store_true")
     parser.add_argument('--case', type=str, default='fox_nbc')
 
     args = parser.parse_args()
