@@ -61,8 +61,8 @@ def append_to_csv(output, news, title, url, index):
         writer.writerow([title, news, index, url])
 
 if __name__ == '__main__':
-    input = "./data/url_only_data.csv"
-    output = "./data/data.csv"
+    input = "./data/fox_nbc/url_only_data.csv"
+    output = "./data/fox_nbc/data.csv"
     data = read_news_url(input)
     url_list = [data[i][0] for i in range(1, len(data))]
     title_list = []
@@ -70,7 +70,7 @@ if __name__ == '__main__':
     if not os.path.exists(output):
         init_output_csv(output)
 
-    start = 2376
+    start = 0
     for i in range(start, len(url_list)):
         url = url_list[i]
         response = open_url(url)

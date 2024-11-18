@@ -10,7 +10,6 @@ import torch.nn.functional as F
 from tqdm import tqdm
 from pyhocon import ConfigFactory
 
-from dataloader import CLSDataset
 from model.network import Classifier
 from model.frequential import FreqNetwork
 from model.sequential import SeqNetwork
@@ -77,8 +76,8 @@ class Runner:
         train_dataset, val_dataset, test_dataset = random_split(self.dataset, [train_size, val_size, test_size])
         # Create DataLoaders
         self.train_loader = DataLoader(train_dataset, batch_size=self.batch_size, shuffle=True)
-        self.val_loader = DataLoader(val_dataset, batch_size=self.batch_size, shuffle=False)
-        self.test_loader = DataLoader(test_dataset, batch_size=self.batch_size, shuffle=False)
+        self.val_loader = DataLoader(val_dataset, batch_size=self.batch_size, shuffle=True)
+        self.test_loader = DataLoader(test_dataset, batch_size=self.batch_size, shuffle=True)
 
         # Load checkpoint
         latest_model_name = None
@@ -92,7 +91,7 @@ class Runner:
             latest_model_name = model_list[-1]
 
         if latest_model_name is not None:
-            logging.info('Find checkpoint: {}'.format(latest_model_name))
+            print('Find checkpoint: {}'.format(latest_model_name))
             self.load_checkpoint(latest_model_name)
 
     def get_cos_anneal_ratio(self):
@@ -117,7 +116,6 @@ class Runner:
         self.cls.load_state_dict(checkpoint['cls'])
         self.optimizer.load_state_dict(checkpoint['optimizer'])
         self.iter_step = checkpoint['iter_step']
-        logging.info('End')
 
     def save_checkpoint(self):
         checkpoint = {
