@@ -69,8 +69,8 @@ class Runner:
 
         # Load Data
         self.dataset = CLSDataset(**self.conf['dataset'])
-        train_size = int(0.8 * len(self.dataset))
-        val_size = int(0.1 * len(self.dataset))
+        train_size = int(1.0 * len(self.dataset))
+        val_size = int(0.0 * len(self.dataset))
         test_size = len(self.dataset) - train_size - val_size
 
         train_dataset, val_dataset, test_dataset = random_split(self.dataset, [train_size, val_size, test_size])
@@ -201,8 +201,8 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--conf', type=str, default='./confs/binarycls.conf')
-    parser.add_argument('--mode', type=str, default='test')
-    parser.add_argument('--is_continue', default=True, action="store_true")
+    parser.add_argument('--mode', type=str, default='train')
+    parser.add_argument('--is_continue', default=False, action="store_true")
     parser.add_argument('--case', type=str, default='fox_nbc')
 
     args = parser.parse_args()

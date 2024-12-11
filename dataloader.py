@@ -19,7 +19,7 @@ class CLSDataset(Dataset):
         # Load the CSV file into a DataFrame
         self.data = pd.read_csv(data_dir)
         self.seqtokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-        self.tfidf_vectorizer = TfidfVectorizer(max_features=10000)
+        self.tfidf_vectorizer = TfidfVectorizer(max_features=2048)
         self.transform = transform
         self.tfidf_vectorizer.fit(self.data['title'])
 

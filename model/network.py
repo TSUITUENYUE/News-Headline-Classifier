@@ -55,6 +55,6 @@ class Classifier(nn.Module):
 
             if l < self.num_layers:
                 x = self.activation()(x)
-
+            x = torch.dropout(x, p=0.2, train=self.training)
         # Output layer
         return x

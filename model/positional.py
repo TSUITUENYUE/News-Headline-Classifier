@@ -23,6 +23,20 @@ class SIREN(nn.Module):
     def forward(self, x):
         return torch.sin(self.omega_0 * self.linear(x))
 
+class AttentionPooling(nn.Module):
+    def __init__(self, input_dim):
+        super(AttentionPooling, self).__init__()
+        self.attention_weights = nn.Linear(input_dim, 1)  # Learnable attention weights
+
+    def forward(self, x):
+        # x: (batch_size, seq_len, input_dim)
+        scores = self.attention_weights(x)  # (batch_size, seq_len, 1)
+        scores = scores.squeeze(-1)  # (batch_size, seq_len)
+        attention_probs = torch.softmax(scores, dim=1)  # Normalize across seq_len
+        x_pooled = torch.sum(x * attention_probs.unsqueeze(-1), dim=1)  # Weighted sum
+        return x_pooled
+
+
 class PosNetwork(nn.Module):
     def __init__(self,
                  input_dim,
@@ -49,6 +63,9 @@ class PosNetwork(nn.Module):
             x = siren_layer(x)
             if l in self.skip_in:
                 x = torch.cat([x, inputs], 1) / np.sqrt(2)
+            x = torch.dropout(x, p=0.2, train=self.training)
 
-        x = x.mean(dim=1)  # Pooling to match Shape: (32, 128)
+        attention_pooling = AttentionPooling(input_dim=x.shape[1])  # Initialize the module
+        x = attention_pooling(x) # Pooling to match Shape: (32, 128)
+
         return x
