@@ -15,8 +15,9 @@ class FreqNetwork(nn.Module):
         self.num_layers = n_layers
         self.skip_in = skip_in
         for l in range(0, self.num_layers+1):
-            if l + 1 in self.skip_in:
-                out_dim = dims[l + 1] - dims[0]
+            if l+1 in self.skip_in:
+                out_dim = dims[l + 1] + dims[0]
+                dims[l + 1] = out_dim
             else:
                 out_dim = dims[l + 1]
             lin = nn.Linear(dims[l], out_dim)
@@ -38,7 +39,7 @@ class FreqNetwork(nn.Module):
             if l < self.num_layers:
                 x = self.activation()(x)
 
-            x = torch.dropout(x, p=0.2, train=self.training)
+            # x = torch.dropout(x, p=0.2, train=self.training)
 
 
         return x
